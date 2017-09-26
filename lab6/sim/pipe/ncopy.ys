@@ -1,0 +1,280 @@
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len ints to dst.
+# Return the number of positive ints (>0) contained in src.
+#
+# Include your name and ID here.
+# Name: Ziyue Jiang
+# ID: 515030910211
+# Describe how and why you modified the baseline code.
+# 1. a) Use iaddl to decrease the extra cycles and registers used on rrmovl (16.44->13.6)
+#    b) Change the jxx condition to more possible one to decrease the jmp hazard (16.44->13.6)
+#
+# 2. a) Change the position of some instructions so that decrease load/use hazard (13.6->10.55) 
+#    b) Loop unrolling with 2-way parallel to decrease judge/jmp & main path cycle (13.6->10.55)  
+#
+# 3. a) try to use 3-way parallel with %ebp (10.55->10.24)
+#
+# 4. a) use 6-way loop unrolling with 3-way parallel (10.24->10.09)
+#
+# 5. (failed) use 12-way loop unrolling, failed because the tail waste too many cycles (10.09->10.35)
+#
+# 6. a) try to use tail table to accelarate the 12-way loop unrolling (10.35->9.28)
+#    (failed) try to use 15-way loop unrolling (9.28->9.28),because Tail limits the speed
+#
+# 7. a) a tricky way instead done (9.28->8.61)
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+ncopy:	pushl %ebp		# Save old frame pointer
+	rrmovl %esp,%ebp	# Set up new frame pointer
+	pushl %esi		# Save callee-save regs
+	pushl %ebx
+	pushl %edi
+	mrmovl 8(%ebp),%ebx	# src
+	mrmovl 16(%ebp),%edx	# len
+	mrmovl 12(%ebp),%ecx	# dst
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	xorl %eax,%eax		# count = 0
+	iaddl $-15, %edx	# len >= 15?
+	jge Loop1		# if so, goto Loop
+        jmp Tail
+
+Loop1:	mrmovl (%ebx), %esi	# read val from src...
+	iaddl $0, %esi		# val <= 0?
+	mrmovl 4(%ebx), %edi	# read val from src...
+	rmmovl %esi, (%ecx)	# ...and store it to dst
+	jle Judge11		# if so, goto Judge
+	iaddl $1, %eax		# count++
+
+Judge11: iaddl $0, %edi		# val <= 0?
+	mrmovl 8(%ebx), %ebp	# read val from src...
+	rmmovl %edi, 4(%ecx)	# ...and store it to dst
+	jle Judge12
+	iaddl $1, %eax		# count++	
+
+Judge12: iaddl $0, %ebp		# val <= 0?
+	mrmovl 12(%ebx), %esi	# read val from src...
+	rmmovl %ebp, 8(%ecx)	# ...and store it to dst
+	jle Loop2
+	iaddl $1, %eax		# count++
+
+Loop2:	iaddl $0, %esi		# val <= 0?
+	mrmovl 16(%ebx), %edi	# read val from src...
+	rmmovl %esi, 12(%ecx)	# ...and store it to dst	
+	jle Judge21		# if so, goto Judge
+	iaddl $1, %eax		# count++
+
+Judge21: iaddl $0, %edi		# val <= 0?
+	mrmovl 20(%ebx), %ebp	# read val from src...
+	rmmovl %edi, 16(%ecx)	# ...and store it to dst
+	jle Judge22
+	iaddl $1, %eax		# count++	
+
+Judge22: iaddl $0, %ebp		# val <= 0?
+	mrmovl 24(%ebx), %esi	# read val from src...
+	rmmovl %ebp, 20(%ecx)	# ...and store it to dst
+	jle Loop3
+	iaddl $1, %eax		# count++
+
+Loop3:	iaddl $0, %esi		# val <= 0?
+	mrmovl 28(%ebx), %edi	# read val from src...
+	rmmovl %esi, 24(%ecx)	# ...and store it to dst	
+	jle Judge31		# if so, goto Judge
+	iaddl $1, %eax		# count++
+
+Judge31: iaddl $0, %edi		# val <= 0?
+	mrmovl 32(%ebx), %ebp	# read val from src...
+	rmmovl %edi, 28(%ecx)	# ...and store it to dst
+	jle Judge32
+	iaddl $1, %eax		# count++	
+
+Judge32: iaddl $0, 	%ebp	# val <= 0?
+	mrmovl 36(%ebx), %esi	# read val from src...
+	rmmovl %ebp, 32(%ecx)	# ...and store it to dst
+	jle Loop4
+	iaddl $1, %eax		# count++
+
+Loop4:	andl %esi, %esi		# val <= 0?
+	mrmovl 40(%ebx), %edi	# read val from src...
+	rmmovl %esi, 36(%ecx)	# ...and store it to dst
+	jle Judge41		# if so, goto Judge
+	iaddl $1, %eax		# count++
+
+Judge41: andl %edi, %edi	# val <= 0?
+	mrmovl 44(%ebx), %ebp	# read val from src...
+	rmmovl %edi, 40(%ecx)	# ...and store it to dst
+	jle Judge42
+	iaddl $1, %eax		# count++	
+
+Judge42: andl %ebp, %ebp	# val <= 0?
+	mrmovl 48(%ebx), %esi	# read val from src...
+	rmmovl %ebp, 44(%ecx)	# ...and store it to dst
+	jle Loop5
+	iaddl $1, %eax		# count++
+
+Loop5:	andl %esi, %esi		# val <= 0?
+	mrmovl 52(%ebx), %edi	# read val from src...
+	rmmovl %esi, 48(%ecx)	# ...and store it to dst
+	jle Judge51		# if so, goto Judge
+	iaddl $1, %eax		# count++
+
+Judge51: andl %edi, %edi	# val <= 0?
+	mrmovl 56(%ebx), %ebp	# read val from src...
+	rmmovl %edi, 52(%ecx)	# ...and store it to dst
+	jle Judge52
+	iaddl $1, %eax		# count++	
+
+Judge52: andl %ebp, %ebp	# val <= 0?
+	rmmovl %ebp, 56(%ecx)	# ...and store it to dst
+	jle Npos
+	iaddl $1, %eax		# count++
+
+Npos:	iaddl $60, %ebx		# src+=15
+	iaddl $60, %ecx		# dst+=15
+	iaddl $-15, %edx	# (len-=15) >= 0?
+	jge Loop1		# if so, goto Loop
+
+Tail:	iaddl $15, %edx         # cal the rest_len
+	addl %edx, %edx		# cal the jmp_address
+	addl %edx, %edx		# cal the jmp_address
+	mrmovl TailTable(%edx), %edx
+	pushl %edx
+	ret
+
+Tail14:
+	mrmovl 52(%ebx), %edi	# read val from src...
+	andl %edi, %edi		# val <= 0?
+	rmmovl %edi, 52(%ecx)	# ...and store it to dst
+    	jle Tail13		
+    	iaddl $1, %eax		# count++
+
+Tail13:
+	mrmovl 48(%ebx), %esi	# read val from src...
+	andl %esi, %esi		# val <= 0?
+	rmmovl %esi, 48(%ecx)	# ...and store it to dst
+    	jle Tail12		
+    	iaddl $1, %eax		# count++
+
+Tail12:
+	mrmovl 44(%ebx), %ebp	# read val from src...
+	andl %ebp, %ebp		# val <= 0?
+	rmmovl %ebp, 44(%ecx)	# ...and store it to dst
+    	jle Tail11		
+    	iaddl $1, %eax		# count++
+
+Tail11:
+	mrmovl 40(%ebx), %edi	# read val from src...
+	andl %edi, %edi		# val <= 0?
+	rmmovl %edi, 40(%ecx)	# ...and store it to dst
+    	jle Tail10		
+    	iaddl $1, %eax		# count++
+
+Tail10:
+	mrmovl 36(%ebx), %esi	# read val from src...
+	andl %esi, %esi		# val <= 0?
+	rmmovl %esi, 36(%ecx)	# ...and store it to dst
+    	jle Tail9		
+    	iaddl $1, %eax		# count++
+
+Tail9:
+	mrmovl 32(%ebx), %ebp	# read val from src...
+	andl %ebp, %ebp		# val <= 0?
+	rmmovl %ebp, 32(%ecx)	# ...and store it to dst
+    	jle Tail8		
+    	iaddl $1, %eax		# count++
+
+Tail8:
+	mrmovl 28(%ebx), %edi	# read val from src...
+	andl %edi, %edi		# val <= 0?
+	rmmovl %edi, 28(%ecx)	# ...and store it to dst
+    	jle Tail7		
+    	iaddl $1, %eax		# count++
+
+Tail7:
+	mrmovl 24(%ebx), %esi	# read val from src...
+	andl %esi, %esi		# val <= 0?
+	rmmovl %esi, 24(%ecx)	# ...and store it to dst
+    	jle Tail6		
+    	iaddl $1, %eax		# count++
+
+Tail6:
+	mrmovl 20(%ebx), %ebp	# read val from src...
+	andl %ebp, %ebp		# val <= 0?
+	rmmovl %ebp, 20(%ecx)	# ...and store it to dst
+    	jle Tail5		
+    	iaddl $1, %eax		# count++
+
+Tail5:
+	mrmovl 16(%ebx), %edi	# read val from src...
+	andl %edi, %edi		# val <= 0?
+	rmmovl %edi, 16(%ecx)	# ...and store it to dst
+    	jle Tail4		
+    	iaddl $1, %eax		# count++
+
+Tail4:
+	mrmovl 12(%ebx), %esi	# read val from src...
+	andl %esi, %esi		# val <= 0?
+	rmmovl %esi, 12(%ecx)	# ...and store it to dst
+    	jle Tail3		
+    	iaddl $1, %eax		# count++
+
+Tail3:
+	mrmovl 8(%ebx), %ebp	# read val from src...
+	andl %ebp, %ebp		# val <= 0?
+	rmmovl %ebp, 8(%ecx)	# ...and store it to dst
+    	jle Tail2		
+    	iaddl $1, %eax		# count++
+
+Tail2:
+	mrmovl 4(%ebx), %edi	# read val from src...
+	andl %edi, %edi		# val <= 0?
+	rmmovl %edi, 4(%ecx)	# ...and store it to dst
+    	jle Tail1		
+    	iaddl $1, %eax		# count++
+
+Tail1:
+	mrmovl (%ebx), %esi	# read val from src...
+	andl %esi, %esi		# val <= 0?
+	rmmovl %esi, (%ecx)	# ...and store it to dst
+    	jle Tail0		
+    	iaddl $1, %eax		# count++
+
+Tail0:	jmp 0x29
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	popl %edi               # Restore callee-save registers
+	popl %ebx
+	popl %esi
+	rrmovl %ebp, %esp
+	popl %ebp
+	ret
+##################################################################
+# tail table, T0 means no extra tail, T1 means 1 tail....T14 means 14 tails
+.align 4
+TailTable:
+    .long Tail0
+    .long Tail1
+    .long Tail2
+    .long Tail3
+    .long Tail4
+    .long Tail5
+    .long Tail6
+    .long Tail7
+    .long Tail8
+    .long Tail9
+    .long Tail10
+    .long Tail11
+    .long Tail12
+    .long Tail13
+    .long Tail14
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */

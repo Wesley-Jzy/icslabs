@@ -1,0 +1,8 @@
+I
+ps | tail -n +2 | sort -k 4
+
+II
+wc -w /usr/share/dict/words | grep ^a
+
+III
+ls -l /etc | grep ".conf$" | sed -n "1,5p"

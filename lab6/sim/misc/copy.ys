@@ -1,0 +1,82 @@
+# Name: Ziyue Jiang
+# ID: 515030910211
+
+# Execution begins ar address 0
+.pos 0
+init:
+	irmovl Stack, %esp
+	irmovl Stack, %ebp
+	irmovl $3, %edx
+	pushl %edx
+	irmovl dest, %edx
+	pushl %edx
+	irmovl src, %edx
+	pushl %edx
+	call Copy
+	halt
+
+.align 4
+# Source block
+src:
+	.long 0x00a
+	.long 0x0b0
+	.long 0xc00
+
+# Destination block
+dest:
+	.long 0x111
+	.long 0x222
+	.long 0x333
+
+Copy:
+	pushl %ebp
+	rrmovl %esp, %ebp
+	irmovl $0, %eax
+	mrmovl 8(%ebp), %esi
+	mrmovl 12(%ebp), %edi
+	mrmovl 16(%ebp), %ecx
+	andl %ecx, %ecx
+	jle End
+
+Loop:
+	mrmovl (%esi), %edx
+	irmovl $4, %ebx
+	addl %ebx, %esi
+	rmmovl %edx, (%edi)
+	irmovl $4, %ebx
+	addl %ebx, %edi
+	xorl %edx, %eax
+	irmovl $-1, %ebx 
+	addl %ebx, %ecx
+	andl %ecx, %ecx
+	jg Loop
+
+End:
+	rrmovl %ebp, %esp
+	popl %ebp
+	ret
+
+.pos 0x100
+Stack:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
